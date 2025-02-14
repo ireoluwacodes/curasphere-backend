@@ -1,0 +1,46 @@
+# Byte-compiled / package files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+
+# Virtual environment
+venv/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.test
+
+# FastAPI logs & cache
+*.log
+instance/
+*.db
+*.sqlite3
+
+# Pytest & Coverage reports
+.coverage
+htmlcov/
+*.cover
+.tox/
+.nox/
+.cache/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# VSCode & JetBrains settings
+.vscode/
+.idea/
+*.iml
+
+# Pip & Dependency files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Docker files (if using)
+docker-compose.override.yml
+.dockerignore
