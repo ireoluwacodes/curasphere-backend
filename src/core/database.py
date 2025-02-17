@@ -1,5 +1,5 @@
 from sqlmodel import create_engine, Session
-from src.config import settings
+from src.core.config import settings
 from sqlalchemy.exc import OperationalError
 import psycopg2
 

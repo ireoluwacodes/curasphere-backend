@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from typing import Mapping
 
 from src.api.user.service import UserService
@@ -42,7 +42,8 @@ async def update_user(
     user = user_service.update_user(user_id, user_update_input)
     return user
 
+
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, user_service : UserService =Depends()):
+async def delete_user(user_id: int, user_service: UserService = Depends()):
     user = user_service.delete(user_id)
     return user

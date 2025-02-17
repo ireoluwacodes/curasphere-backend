@@ -1,5 +1,5 @@
 from fastapi import Depends
-from src.database import get_session
+from src.core.database import get_session
 from src.api.user.models import User
 from sqlmodel import select, Session
 from src.api.user.schema import UserCreateInput, UserUpdateInput
@@ -37,6 +37,7 @@ class UserService:
         self.session.commit()
         self.session.refresh(user)
         return user
+
     def delete_user(self, user_id):
         statement = select(User).where(User.id == user_id)
         user = self.session.exec(statement).one()
