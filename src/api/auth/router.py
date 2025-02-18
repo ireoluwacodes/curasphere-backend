@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from src.api.auth.schemas import (
     RegisterInput,
     LoginInput,
@@ -8,6 +8,7 @@ from src.api.auth.schemas import (
     ResetPasswordInput,
 )
 from src.api.auth.service import AuthService
+from src import api
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -27,13 +28,18 @@ def login(input: LoginInput, auth_service: AuthService = Depends()):
 
 @router.post("/forgot-password")
 def forgot_password(
-    input: ForgotPasswordInput, auth_service: AuthService = Depends()
+    input: ForgotPasswordInput,
+    background_tasks: BackgroundTasks,
+    auth_service: AuthService = Depends(),
 ):
     otp = auth_service.forgot_password(input.email)
-    return {
-        "detail": "OTP sent to your email",
-        "otp": otp,
-    }  # Remove otp in production
+    my_email = api.EmailSchema(
+        subject="Forgot Password",
+        email=[input.email],
+        body=f"<h2>Hello, your otp to reset password is {otp}!</h2>",
+    )
+    background_tasks.add_task(auth_service.send_email, my_email)
+    return {"message": "Email sent"}
 
 
 @router.post("/confirm-otp")

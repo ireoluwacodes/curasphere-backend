@@ -35,3 +35,9 @@ class ResetPasswordInput(BaseModel):
     email: EmailStr
     otp: str
     new_password: str
+
+
+class EmailSchema(BaseModel):
+    email: list[EmailStr]  # List of recipients
+    subject: str
+    body: str
