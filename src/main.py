@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-import src.core.database
+import src.core.database  # noqa: F401
 
 from src.api.user.router import router as user_router
 from src.api.auth.router import router as auth_router

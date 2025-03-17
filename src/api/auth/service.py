@@ -1,4 +1,3 @@
-from fastapi_mail import FastMail, MessageSchema, MessageType
 import jwt
 import random
 from datetime import datetime, timedelta
@@ -9,8 +8,6 @@ from passlib.context import CryptContext
 from src.core.database import get_session
 from src.api.user.models import User
 from src import settings
-from src import core
-from src import api
 
 # Dependency install: pip install passlib pyjwt
 
@@ -24,17 +21,6 @@ class AuthService:
 
     def hash_password(self, password: str) -> str:
         return pwd_context.hash(password)
-
-    async def send_email(email: api.EmailSchema):
-        message = MessageSchema(
-            subject=email.subject,
-            recipients=email.model_dump().get("email"),
-            body=email.body,
-            subtype=MessageType.html,  # You can also use "plain" for text emails
-        )
-
-        fm = FastMail(core.conf)
-        await fm.send_message(message)
 
     def verify_password(
         self, plain_password: str, hashed_password: str
@@ -89,6 +75,7 @@ class AuthService:
         user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
         self.session.add(user)
         self.session.commit()
+        # In real use, send the OTP via email.
         return otp
 
     def confirm_otp(self, email: str, otp: str) -> bool:

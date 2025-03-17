@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from src.api.auth.schemas import (
     RegisterInput,
-    LoginInput,
     AuthResponse,
     ForgotPasswordInput,
     ConfirmOtpInput,
@@ -9,8 +9,10 @@ from src.api.auth.schemas import (
 )
 from src.api.auth.service import AuthService
 from src import api
+from src.api.deps import get_current_user
+from src.api.user.models import User
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
 
 @router.post("/register", response_model=AuthResponse)
@@ -21,8 +23,11 @@ def register(input: RegisterInput, auth_service: AuthService = Depends()):
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(input: LoginInput, auth_service: AuthService = Depends()):
-    token = auth_service.login(input.email, input.password)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    auth_service: AuthService = Depends(),
+):
+    token = auth_service.login(form_data.username, form_data.password)
     return AuthResponse(access_token=token)
 
 
@@ -52,7 +57,9 @@ def confirm_otp(
 
 @router.post("/reset-password")
 def reset_password(
-    input: ResetPasswordInput, auth_service: AuthService = Depends()
+    input: ResetPasswordInput,
+    auth_service: AuthService = Depends(),
+    user: User = Depends(get_current_user),
 ):
     auth_service.reset_password(input.email, input.otp, input.new_password)
     return {"detail": "Password reset successfully"}
