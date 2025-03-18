@@ -50,7 +50,7 @@ class AuthService:
         user = User(
             username=username,
             email=email,
-            password=self.hash_password(password),
+            hash=self.hash_password(password),
         )
         self.session.add(user)
         self.session.commit()
@@ -60,7 +60,7 @@ class AuthService:
     def login(self, email: str, password: str) -> str:
         statement = select(User).where(User.email == email)
         user = self.session.exec(statement).one_or_none()
-        if not user or not self.verify_password(password, user.password):
+        if not user or not self.verify_password(password, user.hash):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         token = self.create_access_token({"sub": str(user.id)})
         return token
@@ -102,7 +102,7 @@ class AuthService:
             raise HTTPException(
                 status_code=400, detail="Invalid or expired OTP"
             )
-        user.password = self.hash_password(new_password)
+        user.hash = self.hash_password(new_password)
         # Clear OTP fields
         user.otp = None
         user.otp_expiry = None
