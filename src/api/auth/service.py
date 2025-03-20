@@ -6,10 +6,15 @@ from fastapi import Depends, HTTPException
 from sqlmodel import Session, select
 from passlib.context import CryptContext
 from src.core.database import get_session
-from src.api.user.models import User
+from src.api.user.models import (
+    Doctor,
+    GenderEnum,
+    Nurse,
+    Patient,
+    User,
+    UserRole,
+)
 from src import settings
-
-# Dependency install: pip install passlib pyjwt
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -40,21 +45,72 @@ class AuthService:
             to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
         )
 
-    def register(self, username: str, email: str, password: str) -> User:
-        statement = select(User).where(User.email == email)
-        existing_user = self.session.exec(statement).one_or_none()
-        if existing_user:
+    def register(
+        self,
+        full_name: str,
+        email: str,
+        password: str,
+        identification_number: str,
+        **kwargs,
+    ) -> User:
+        statement_email = select(User).where(User.email == email)
+        statement_id = select(User).where(
+            User.username == identification_number
+        )
+        existing_email = self.session.exec(statement_email).one_or_none()
+        existing_id = self.session.exec(statement_id).one_or_none()
+        if existing_email or existing_id:
             raise HTTPException(
                 status_code=400, detail="Email already registered"
             )
+
+        # Determine the role based on the identification number
+        if "doc" in identification_number.lower():
+            role = UserRole.doctor
+        elif "nsc" in identification_number.lower():
+            role = UserRole.nurse
+        else:
+            role = UserRole.patient
+
+        # Create the user
         user = User(
-            username=username,
+            username=identification_number,
             email=email,
             hash=self.hash_password(password),
+            role=role,
         )
         self.session.add(user)
         self.session.commit()
         self.session.refresh(user)
+
+        # Create the appropriate role model based on the determined role
+        if role == UserRole.doctor:
+            specialization = kwargs.get("specialization", "General")
+            doctor = Doctor(
+                user_id=user.id,
+                full_name=full_name,
+                specialization=specialization,
+            )
+            self.session.add(doctor)
+        elif role == UserRole.nurse:
+            nurse = Nurse(user_id=user.id, full_name=full_name)
+            self.session.add(nurse)
+        else:
+            # Create patient as default
+            patient = Patient(
+                user_id=user.id,
+                full_name=full_name,
+                age=kwargs.get("age", 0),
+                gender=kwargs.get("gender", GenderEnum.OTHER),
+                current_weight_kg=kwargs.get("current_weight_kg", 0.0),
+                current_height_cm=kwargs.get("current_height_cm", 0.0),
+                hospital_card_id=kwargs.get(
+                    "hospital_card_id", f"P-{user.id}"
+                ),
+            )
+            self.session.add(patient)
+
+        self.session.commit()
         return user
 
     def login(self, email: str, password: str) -> str:

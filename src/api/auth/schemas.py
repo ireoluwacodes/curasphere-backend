@@ -2,14 +2,16 @@ from pydantic import BaseModel, EmailStr
 
 
 class RegisterInput(BaseModel):
-    user_id: str
     email: EmailStr
     full_name: str
     password: str
-    age: str
-    weight_kg: str
-    height_cm: str
-    gender: str
+    identification_number: str  # Added field for role determination
+    # For patient-specific fields
+    age: int = None
+    gender: str = None
+    current_weight_kg: float = None
+    current_height_cm: float = None
+    hospital_card_id: str = None
 
 
 class LoginInput(BaseModel):

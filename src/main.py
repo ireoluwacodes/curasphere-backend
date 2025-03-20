@@ -7,8 +7,8 @@ from src.api.auth.router import router as auth_router
 
 app = FastAPI()
 
-app.include_router(user_router, prefix="/users", tags=["users"])
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(user_router, prefix="/users", tags=["users"])
 
 
 @app.get("/")

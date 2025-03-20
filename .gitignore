@@ -45,3 +45,5 @@ pip-delete-this-directory.txt
 # Docker files (if using)
 docker-compose.override.yml
 .dockerignore
+
+docs.md

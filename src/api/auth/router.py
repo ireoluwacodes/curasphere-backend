@@ -17,7 +17,27 @@ router = APIRouter()
 
 @router.post("/register", response_model=AuthResponse)
 def register(input: RegisterInput, auth_service: AuthService = Depends()):
-    user = auth_service.register(input.username, input.email, input.password)
+    # Extract the kwargs for the specific role
+    kwargs = {}
+
+    # Check the identification number to determine role
+    if "doc" in input.identification_number.lower():
+        kwargs["specialization"] = input.specialization or "General"
+    else:
+        # For patients
+        kwargs["age"] = input.age
+        kwargs["gender"] = input.gender
+        kwargs["current_weight_kg"] = input.current_weight_kg
+        kwargs["current_height_cm"] = input.current_height_cm
+        kwargs["hospital_card_id"] = input.hospital_card_id
+
+    user = auth_service.register(
+        input.full_name,
+        input.email,
+        input.password,
+        input.identification_number,
+        **kwargs,
+    )
     token = auth_service.create_access_token({"sub": str(user.id)})
     return AuthResponse(access_token=token)
 

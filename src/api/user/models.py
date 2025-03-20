@@ -15,6 +15,12 @@ class UserRole(BaseEnum):
     nurse = "nurse"
 
 
+class GenderEnum(BaseEnum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+
 class User(ModelBase, SQLModel, table=True):
     id: Optional[uuid.UUID] = Field(
         default_factory=uuid.uuid4,
@@ -42,8 +48,8 @@ class Doctor(ModelBase, SQLModel, table=True):
         nullable=False,
     )
     user_id: int = Field(foreign_key="user.id", unique=True)
+    full_name: str = Field(nullable=False)
     specialization: str
-
     user: "User" = Relationship(back_populates="doctor")
     appointments: List["Appointment"] = Relationship(back_populates="doctor")
 
@@ -56,11 +62,12 @@ class Nurse(ModelBase, SQLModel, table=True):
         nullable=False,
     )
     user_id: int = Field(foreign_key="user.id", unique=True)
+    full_name: str = Field(nullable=False)
 
     user: "User" = Relationship(back_populates="nurse")
 
 
-class Patient(ModelBase, SQLModel, table=True):
+class Patient(SQLModel, table=True):
     id: Optional[uuid.UUID] = Field(
         default_factory=uuid.uuid4,
         primary_key=True,
@@ -68,8 +75,13 @@ class Patient(ModelBase, SQLModel, table=True):
         nullable=False,
     )
     user_id: int = Field(foreign_key="user.id", unique=True)
-    medical_history: Optional[str] = None
+    full_name: str = Field(nullable=False)
+    age: int = Field(nullable=False)
+    hospital_card_id: str
+    gender: GenderEnum = Field(nullable=False)
+    current_weight_kg: float = Field(nullable=False)
+    current_height_cm: float = Field(nullable=False)
 
-    user: "User" = Relationship(back_populates="patient")
+    user: User = Relationship(back_populates="patient")
     appointments: List["Appointment"] = Relationship(back_populates="patient")
     ehr: List["EHR"] = Relationship(back_populates="patient")
