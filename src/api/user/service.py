@@ -2,7 +2,7 @@ from fastapi import Depends
 from src.core.database import get_session
 from src.api.user.models import User
 from sqlmodel import select, Session
-from src.api.user.schema import UserCreateInput, UserUpdateInput
+from src.api.user.schema import UserUpdateInput
 
 
 class UserService:
@@ -13,13 +13,6 @@ class UserService:
         statement = select(User)
         users = self.session.exec(statement).all()
         return users
-
-    def create_user(self, user_create_input: UserCreateInput):
-        user = User(**user_create_input.model_dump())
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
-        return user
 
     def get_user(self, user_id: int):
         statement = select(User).where(User.id == user_id)
