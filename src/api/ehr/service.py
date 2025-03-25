@@ -1,5 +1,5 @@
 from fastapi import Depends
-from typing import UUID
+from uuid import UUID
 
 from src.api.ehr.repository import EHRRepository
 from src.api.appointment.repository import AppointmentRepository

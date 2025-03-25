@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlmodel import Session, select
-from typing import Optional, List, UUID
+from typing import Optional, List
+from uuid import UUID
 
 from src.api.ehr.model import EHR
 from src.api.appointment.model import Appointment

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, UUID
+from typing import Optional
+from uuid import UUID
 from datetime import datetime
 
 
@@ -33,4 +34,4 @@ class EHROutput(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
