@@ -30,7 +30,7 @@ async def read_user(
     return user
 
 
-@router.put("/{user_id}")
+@router.put("/update/{user_id}")
 async def update_user(
     user_id: int,
     user_update_input: UserUpdateInput,
@@ -42,7 +42,7 @@ async def update_user(
     return user
 
 
-@router.delete("/{user_id}")
+@router.delete("/delete/{user_id}")
 async def delete_user(
     user_id: int,
     user_service: UserService = Depends(),

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.user.router import router as user_router
 from src.api.auth.router import router as auth_router
 from src.api.appointment.router import router as appointment_router
+from src.api.ehr.router import router as ehr_router
 from src.api.sse.service import setup_sse_routes
 
 
@@ -22,6 +23,7 @@ app.include_router(
     appointment_router, prefix="/appointment", tags=["appointment"]
 )
 app.include_router(user_router, prefix="/users", tags=["users"])
+app.include_router(ehr_router, prefix="/ehr", tags=["ehr"])
 
 # Setup SSE routes
 setup_sse_routes(app)
