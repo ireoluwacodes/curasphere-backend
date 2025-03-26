@@ -1,16 +1,17 @@
 from pydantic import BaseModel, EmailStr
+from uuid import UUID
 
 
 class RegisterInput(BaseModel):
     email: EmailStr
     full_name: str
     password: str
-    identification_number: str  # Added field for role determination
+    id_number: str  # Added field for role determination
     # For patient-specific fields
     age: int = None
     gender: str = None
-    current_weight_kg: float = None
-    current_height_cm: float = None
+    weight: float = None
+    height: float = None
     hospital_card_id: str = None
 
 
@@ -19,9 +20,47 @@ class LoginInput(BaseModel):
     password: str
 
 
+class DoctorResponse(BaseModel):
+    id: UUID
+    full_name: str
+
+
+class NurseResponse(BaseModel):
+    id: UUID
+    full_name: str
+
+
+class PatientResponse(BaseModel):
+    id: UUID
+    full_name: str
+    age: int
+    gender: str
+    hospital_card_id: str
+    current_weight_kg: float
+    current_height_cm: float
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    username: str
+    email: str
+    role: str
+    doctor: DoctorResponse = None
+    nurse: NurseResponse = None
+    patient: PatientResponse = None
+
+
 class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user: UserResponse
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    username: str
+    email: str
+    role: str
 
 
 class ForgotPasswordInput(BaseModel):
@@ -35,7 +74,6 @@ class ConfirmOtpInput(BaseModel):
 
 class ResetPasswordInput(BaseModel):
     email: EmailStr
-    otp: str
     new_password: str
 
 

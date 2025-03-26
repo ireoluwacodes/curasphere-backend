@@ -61,7 +61,7 @@ class AuthService:
         existing_id = self.session.exec(statement_id).one_or_none()
         if existing_email or existing_id:
             raise HTTPException(
-                status_code=400, detail="Email already registered"
+                status_code=400, detail="Email or id already registered"
             )
 
         # Determine the role based on the identification number
@@ -85,11 +85,9 @@ class AuthService:
 
         # Create the appropriate role model based on the determined role
         if role == UserRole.doctor:
-            specialization = kwargs.get("specialization", "General")
             doctor = Doctor(
                 user_id=user.id,
                 full_name=full_name,
-                specialization=specialization,
             )
             self.session.add(doctor)
         elif role == UserRole.nurse:
@@ -102,8 +100,8 @@ class AuthService:
                 full_name=full_name,
                 age=kwargs.get("age", 0),
                 gender=kwargs.get("gender", GenderEnum.OTHER),
-                current_weight_kg=kwargs.get("current_weight_kg", 0.0),
-                current_height_cm=kwargs.get("current_height_cm", 0.0),
+                current_weight_kg=kwargs.get("weight", 0.0),
+                current_height_cm=kwargs.get("height", 0.0),
                 hospital_card_id=kwargs.get(
                     "hospital_card_id", f"P-{user.id}"
                 ),
@@ -113,13 +111,28 @@ class AuthService:
         self.session.commit()
         return user
 
-    def login(self, email: str, password: str) -> str:
+    def login(self, email: str, password: str) -> tuple:
         statement = select(User).where(User.email == email)
         user = self.session.exec(statement).one_or_none()
         if not user or not self.verify_password(password, user.hash):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         token = self.create_access_token({"sub": str(user.id)})
-        return token
+
+        # Load the associated entity based on the user's role
+        if user.role == UserRole.doctor:
+            statement = select(Doctor).where(Doctor.user_id == user.id)
+            doctor = self.session.exec(statement).one()
+            user.doctor = doctor
+        elif user.role == UserRole.nurse:
+            statement = select(Nurse).where(Nurse.user_id == user.id)
+            nurse = self.session.exec(statement).one()
+            user.nurse = nurse
+        elif user.role == UserRole.patient:
+            statement = select(Patient).where(Patient.user_id == user.id)
+            patient = self.session.exec(statement).one()
+            user.patient = patient
+
+        return token, user
 
     def forgot_password(self, email: str) -> str:
         statement = select(User).where(User.email == email)
@@ -131,7 +144,6 @@ class AuthService:
         user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
         self.session.add(user)
         self.session.commit()
-        # In real use, send the OTP via email.
         return otp
 
     def confirm_otp(self, email: str, otp: str) -> bool:
@@ -145,19 +157,12 @@ class AuthService:
             raise HTTPException(
                 status_code=400, detail="Invalid or expired OTP"
             )
-        return True
+        token = self.create_access_token({"sub": str(user.id)})
+        return token
 
     def reset_password(self, email: str, otp: str, new_password: str) -> User:
         statement = select(User).where(User.email == email)
         user = self.session.exec(statement).one_or_none()
-        if (
-            not user
-            or user.otp != otp
-            or (user.otp_expiry and user.otp_expiry < datetime.utcnow())
-        ):
-            raise HTTPException(
-                status_code=400, detail="Invalid or expired OTP"
-            )
         user.hash = self.hash_password(new_password)
         # Clear OTP fields
         user.otp = None

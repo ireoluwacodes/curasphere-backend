@@ -3,6 +3,7 @@ import uuid
 from sqlmodel import Field, Relationship, SQLModel
 from typing import TYPE_CHECKING, Optional
 from src.api.base_model import ModelBase
+from src.api.ehr.model import EHR
 from src.api.uni_enum import BaseEnum
 
 if TYPE_CHECKING:
@@ -39,4 +40,5 @@ class Appointment(ModelBase, SQLModel, table=True):
     description: Optional[str] = Field(default=None)
 
     patient: "Patient" = Relationship(back_populates="appointments")
+    ehr: "EHR" = Relationship(back_populates="appointment")
     doctor: "Doctor" = Relationship(back_populates="appointments")

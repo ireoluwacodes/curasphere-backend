@@ -21,11 +21,11 @@ except OperationalError:
     cur = conn.cursor()
 
     # Create the missing database
-    cur.execute("CREATE DATABASE starter;")
+    cur.execute("CREATE DATABASE curasphere;")
     cur.close()
     conn.close()
 
-    print("✅ Database 'starter' created successfully!")
+    print("✅ Database 'curasphere' created successfully!")
 
     # Reconnect after creation
     engine = create_engine(DATABASE_URL)

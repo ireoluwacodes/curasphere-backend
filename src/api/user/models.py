@@ -22,6 +22,8 @@ class GenderEnum(BaseEnum):
 
 
 class User(ModelBase, SQLModel, table=True):
+    __tablename__ = "users"  # Change table name from "user" to "users"
+
     id: Optional[uuid.UUID] = Field(
         default_factory=uuid.uuid4,
         primary_key=True,
@@ -47,10 +49,10 @@ class Doctor(ModelBase, SQLModel, table=True):
         index=True,
         nullable=False,
     )
-    user_id: uuid.UUID = Field(foreign_key="user.id", unique=True)
+    user_id: uuid.UUID = Field(foreign_key="users.id", unique=True)
     full_name: str = Field(nullable=False)
-    specialization: str
     user: "User" = Relationship(back_populates="doctor")
+    ehr: List["EHR"] = Relationship(back_populates="doctor")
     appointments: List["Appointment"] = Relationship(back_populates="doctor")
 
 
@@ -61,10 +63,11 @@ class Nurse(ModelBase, SQLModel, table=True):
         index=True,
         nullable=False,
     )
-    user_id: uuid.UUID = Field(foreign_key="user.id", unique=True)
+    user_id: uuid.UUID = Field(foreign_key="users.id", unique=True)
     full_name: str = Field(nullable=False)
 
     user: "User" = Relationship(back_populates="nurse")
+    ehr: List["EHR"] = Relationship(back_populates="nurse")
 
 
 class Patient(SQLModel, table=True):
@@ -74,7 +77,7 @@ class Patient(SQLModel, table=True):
         index=True,
         nullable=False,
     )
-    user_id: uuid.UUID = Field(foreign_key="user.id", unique=True)
+    user_id: uuid.UUID = Field(foreign_key="users.id", unique=True)
     full_name: str = Field(nullable=False)
     age: int = Field(nullable=False)
     hospital_card_id: str

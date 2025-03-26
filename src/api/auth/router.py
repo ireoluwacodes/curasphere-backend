@@ -6,40 +6,39 @@ from src.api.auth.schemas import (
     ForgotPasswordInput,
     ConfirmOtpInput,
     ResetPasswordInput,
+    UserResponse,
+    DoctorResponse,
+    NurseResponse,
+    PatientResponse,
 )
 from src.api.auth.service import AuthService
 from src import api
 from src.api.deps import get_current_user
-from src.api.user.models import User
+from src.api.user.models import User, UserRole
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=AuthResponse)
+@router.post("/register", response_model=UserResponse)
 def register(input: RegisterInput, auth_service: AuthService = Depends()):
-    # Extract the kwargs for the specific role
     kwargs = {}
 
-    # Check the identification number to determine role
-    if "doc" in input.identification_number.lower():
-        kwargs["specialization"] = input.specialization or "General"
-    else:
-        # For patients
-        kwargs["age"] = input.age
-        kwargs["gender"] = input.gender
-        kwargs["current_weight_kg"] = input.current_weight_kg
-        kwargs["current_height_cm"] = input.current_height_cm
-        kwargs["hospital_card_id"] = input.hospital_card_id
+    kwargs["age"] = input.age
+    kwargs["gender"] = input.gender
+    kwargs["weight"] = input.weight
+    kwargs["height"] = input.height
+    kwargs["hospital_card_id"] = input.hospital_card_id
 
     user = auth_service.register(
         input.full_name,
         input.email,
         input.password,
-        input.identification_number,
+        input.id_number,
         **kwargs,
     )
-    token = auth_service.create_access_token({"sub": str(user.id)})
-    return AuthResponse(access_token=token)
+    return UserResponse(
+        id=user.id, username=user.username, email=user.email, role=user.role
+    )
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -48,7 +47,33 @@ def login(
     auth_service: AuthService = Depends(),
 ):
     token = auth_service.login(form_data.username, form_data.password)
-    return AuthResponse(access_token=token)
+    user = auth_service.get_current_user(token)
+
+    user_response = UserResponse(
+        id=user.id, username=user.username, email=user.email, role=user.role
+    )
+
+    # Create the appropriate entity response based on user's role
+    if user.role == UserRole.doctor and user.doctor:
+        user_response.doctor = DoctorResponse(
+            id=user.doctor.id, full_name=user.doctor.full_name
+        )
+    elif user.role == UserRole.nurse and user.nurse:
+        user_response.nurse = NurseResponse(
+            id=user.nurse.id, full_name=user.nurse.full_name
+        )
+    elif user.role == UserRole.patient and user.patient:
+        user_response.patient = PatientResponse(
+            id=user.patient.id,
+            full_name=user.patient.full_name,
+            age=user.patient.age,
+            gender=user.patient.gender,
+            hospital_card_id=user.patient.hospital_card_id,
+            current_weight_kg=user.patient.current_weight_kg,
+            current_height_cm=user.patient.current_height_cm,
+        )
+
+    return AuthResponse(access_token=token, user=user_response)
 
 
 @router.post("/forgot-password")
@@ -71,8 +96,8 @@ def forgot_password(
 def confirm_otp(
     input: ConfirmOtpInput, auth_service: AuthService = Depends()
 ):
-    auth_service.confirm_otp(input.email, input.otp)
-    return {"detail": "OTP confirmed"}
+    token = auth_service.confirm_otp(input.email, input.otp)
+    return {"detail": "OTP confirmed", token: token}
 
 
 @router.post("/reset-password")
@@ -81,5 +106,5 @@ def reset_password(
     auth_service: AuthService = Depends(),
     user: User = Depends(get_current_user),
 ):
-    auth_service.reset_password(input.email, input.otp, input.new_password)
+    auth_service.reset_password(input.email, input.new_password)
     return {"detail": "Password reset successfully"}

@@ -9,6 +9,10 @@ from sqlmodel import SQLModel
 
 from src.core.config import settings
 
+from src.api.user.models import *  # noqa
+from src.api.appointment.model import *  # noqa
+from src.api.ehr.model import *  # noqa
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
