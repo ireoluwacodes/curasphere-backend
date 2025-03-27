@@ -46,8 +46,7 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(),
 ):
-    token = auth_service.login(form_data.username, form_data.password)
-    user = auth_service.get_current_user(token)
+    user, token = auth_service.login(form_data.username, form_data.password)
 
     user_response = UserResponse(
         id=user.id, username=user.username, email=user.email, role=user.role

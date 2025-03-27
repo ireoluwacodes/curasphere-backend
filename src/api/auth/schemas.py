@@ -56,13 +56,6 @@ class AuthResponse(BaseModel):
     user: UserResponse
 
 
-class UserResponse(BaseModel):
-    id: UUID
-    username: str
-    email: str
-    role: str
-
-
 class ForgotPasswordInput(BaseModel):
     email: EmailStr
 
