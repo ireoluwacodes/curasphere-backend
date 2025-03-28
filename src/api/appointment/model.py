@@ -30,9 +30,9 @@ class Appointment(ModelBase, SQLModel, table=True):
         nullable=False,
     )
     patient_id: uuid.UUID = Field(foreign_key="patient.id")
-    doctor_id: uuid.UUID = Field(foreign_key="doctor.id")
+    doctor_id: uuid.UUID = Field(foreign_key="doctor.id", nullable=True)
     scheduled_time: datetime = Field(index=True)
-    duration_minutes: int = Field(default=30)
+    duration_minutes: int = Field(default=20)
     status: str = Field(default="pending")
     urgency_level: UrgencyLevel = Field(default=UrgencyLevel.LOW)
     type: AppointmentType = Field(default=AppointmentType.CONSULTATION)

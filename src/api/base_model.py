@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from uuid import UUID
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlmodel import Field, SQLModel, func, text
@@ -36,4 +37,4 @@ class ModelBase(SchemaBase):
 
 
 class TokenPayload(BaseModel):
-    sub: Optional[int] = None
+    sub: Optional[UUID] = None

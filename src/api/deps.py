@@ -21,7 +21,7 @@ def get_current_user(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
+    except (jwt.PyJWTError, ValidationError):
         raise HTTPException(
             status_code=401,
             detail="Could not validate credentials",
@@ -29,5 +29,5 @@ def get_current_user(
 
     user = session.get(User, token_data.sub)
     if not user:
-        raise HTTPException(status_code=404, detail="Account not found")
+        raise HTTPException(status_code=401, detail="Account not found")
     return user

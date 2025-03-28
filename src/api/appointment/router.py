@@ -13,7 +13,7 @@ async def book_appointment(
     appointment_service: AppointmentService = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    appointment = appointment_service.book_appointment(current_user, data)
+    appointment = appointment_service.book_appointment(current_user.id, data)
     return {"success": True, "appointment": appointment}
 
 
