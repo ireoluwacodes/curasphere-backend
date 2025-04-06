@@ -8,7 +8,6 @@ class VitalSignsInput(BaseModel):
     temperature: float
     blood_pressure: str
     heart_rate: int
-    doctor_id: UUID  # To assign a doctor
 
 
 class DiagnosisInput(BaseModel):

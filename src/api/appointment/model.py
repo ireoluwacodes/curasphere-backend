@@ -1,5 +1,6 @@
 from datetime import datetime
 import uuid
+from sqlalchemy import Column, Enum
 from sqlmodel import Field, Relationship, SQLModel
 from typing import TYPE_CHECKING, Optional
 from src.api.base_model import ModelBase
@@ -11,15 +12,23 @@ if TYPE_CHECKING:
 
 
 class UrgencyLevel(BaseEnum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
 
 
 class AppointmentType(BaseEnum):
     CONSULTATION = "consultation"
     FOLLOW_UP = "follow_up"
     EMERGENCY = "emergency"
+
+
+class AppointmentStatus(BaseEnum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    VITALS_RECORDED = "VITALS_RECORDED"
+    COMPLETED = "COMPLETED"
+    CANCELED = "CANCELED"
 
 
 class Appointment(ModelBase, SQLModel, table=True):
@@ -33,12 +42,23 @@ class Appointment(ModelBase, SQLModel, table=True):
     doctor_id: uuid.UUID = Field(foreign_key="doctor.id", nullable=True)
     scheduled_time: datetime = Field(index=True)
     duration_minutes: int = Field(default=20)
-    status: str = Field(default="pending")
+    status: AppointmentStatus = Field(
+        sa_column=Column(
+            Enum(
+                AppointmentStatus, name="appointmentstatus", native_enum=True
+            ),
+            default=AppointmentStatus.PENDING,
+            nullable=False,
+        )
+    )
     urgency_level: UrgencyLevel = Field(default=UrgencyLevel.LOW)
     type: AppointmentType = Field(default=AppointmentType.CONSULTATION)
     location: Optional[str] = Field(default=None)
     description: Optional[str] = Field(default=None)
 
-    patient: "Patient" = Relationship(back_populates="appointments")
-    ehr: "EHR" = Relationship(back_populates="appointment")
-    doctor: "Doctor" = Relationship(back_populates="appointments")
+    patient: Optional["Patient"] = Relationship(
+        back_populates="appointments",
+        sa_relationship_kwargs={"lazy": "joined"},
+    )
+    ehr: Optional["EHR"] = Relationship(back_populates="appointment")
+    doctor: Optional["Doctor"] = Relationship(back_populates="appointments")

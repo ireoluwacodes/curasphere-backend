@@ -42,6 +42,9 @@ class AppointmentService:
     def list(self, user_id):
         return self.repository.list(user_id)
 
+    def nurse_list_all(self):
+        return self.repository.nurse_list_all()
+
     def update(self, user_id, appointment_id, data):
         return self.repository.update(user_id, appointment_id, data)
 

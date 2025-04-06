@@ -85,6 +85,6 @@ class Patient(SQLModel, table=True):
     current_weight_kg: float = Field(nullable=False)
     current_height_cm: float = Field(nullable=False)
 
-    user: User = Relationship(back_populates="patient")
+    user: "User" = Relationship(back_populates="patient")
     appointments: List["Appointment"] = Relationship(back_populates="patient")
     ehr: List["EHR"] = Relationship(back_populates="patient")

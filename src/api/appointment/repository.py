@@ -1,12 +1,15 @@
 from fastapi import Depends
 from sqlmodel import Session, select
-from datetime import datetime
+from datetime import datetime, date
+from sqlalchemy import func
 
 from src.api.appointment.model import (
     Appointment,
     AppointmentType,
 )
+from src.api.user.models import Patient
 from src.core.database import get_session
+from sqlalchemy.orm import selectinload
 
 
 class AppointmentRepository:
@@ -58,11 +61,50 @@ class AppointmentRepository:
         return self.session.exec(statement).one_or_none()
 
     def list(self, user_id):
-        statement = select(Appointment).where(
-            (Appointment.patient_id == user_id)
-            | (Appointment.doctor_id == user_id)
+        statement = (
+            select(Appointment)
+            .where(
+                (Appointment.patient_id == user_id)
+                | (Appointment.doctor_id == user_id)
+            )
+            .options(selectinload(Appointment.patient))
         )
-        return self.session.exec(statement).all()
+        appointments = self.session.exec(statement).all()
+
+        enriched_appointments = []
+        for appointment in appointments:
+            patient = self.session.exec(
+                select(Patient).where(Patient.id == appointment.patient_id)
+            ).one()
+            if patient:
+                new = {}
+                new["appointment"] = appointment
+                new["patient"] = patient
+                enriched_appointments.append(new)
+        return enriched_appointments
+
+    def nurse_list_all(self):
+        today = date.today()
+        statement = select(Appointment).where(
+            (func.date(Appointment.scheduled_time) == today)
+            | (
+                (func.date(Appointment.scheduled_time) < today)
+                & (Appointment.status != "COMPLETED")
+            )
+        )
+        appointments = self.session.exec(statement).all()
+
+        enriched_appointments = []
+        for appointment in appointments:
+            patient = self.session.exec(
+                select(Patient).where(Patient.id == appointment.patient_id)
+            ).one()
+            if patient:
+                new = {}
+                new["appointment"] = appointment
+                new["patient"] = patient
+                enriched_appointments.append(new)
+        return enriched_appointments
 
     def update(self, user_id, appointment_id, data):
         appointment = self.get(user_id, appointment_id)

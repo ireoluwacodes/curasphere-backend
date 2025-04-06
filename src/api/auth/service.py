@@ -68,6 +68,8 @@ class AuthService:
             # Determine the role based on the identification number
             if "doc" in identification_number.lower():
                 role = UserRole.doctor
+            elif "admin" in identification_number.lower():
+                role = UserRole.admin
             elif "nsc" in identification_number.lower():
                 role = UserRole.nurse
             else:
@@ -94,6 +96,8 @@ class AuthService:
             elif role == UserRole.nurse:
                 nurse = Nurse(user_id=user.id, full_name=full_name)
                 self.session.add(nurse)
+            elif role == UserRole.admin:
+                print("new admin")
             else:
                 # Create patient as default
                 patient = Patient(

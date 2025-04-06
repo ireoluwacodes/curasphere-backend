@@ -8,6 +8,12 @@ if TYPE_CHECKING:
     from src.api.user import Patient, Doctor, Nurse
     from src.api.appointment.model import Appointment
 
+# class EHRStatus(BaseEnum):
+#     INITIATED = "initiated"
+#     VITALS_RECORDED = "vitals_recorded"
+#     DIAGNOSED = "diagnosed"
+#     COMPLETED = "completed"
+
 
 class EHR(ModelBase, SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

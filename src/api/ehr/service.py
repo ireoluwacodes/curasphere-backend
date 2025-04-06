@@ -16,14 +16,9 @@ class EHRService:
         self.appointment_repository = appointment_repository
         self.sse_service = SSEService()
 
-    def initiate_ehr(self, appointment_id: UUID, nurse_id: UUID):
-        """Create a new EHR record for an appointment"""
-        ehr = self.repository.create(appointment_id, nurse_id)
-        return ehr
-
-    def record_vitals(self, ehr_id: int, data, nurse_id: UUID):
-        """Record vital signs and assign doctor"""
-        ehr = self.repository.update_vitals(ehr_id, data, data.doctor_id)
+    def record_vitals(self, appointment_id: UUID, data, nurse_id: UUID):
+        """Record vital signs"""
+        ehr = self.repository.update_vitals(appointment_id, data, nurse_id)
 
         if ehr:
             # Notify the assigned doctor
@@ -37,6 +32,11 @@ class EHRService:
                 recipient_id=str(ehr.doctor_id),
             )
 
+        return ehr
+
+    def assign_doctor(self, doctor_id: UUID, ehr_id: UUID):
+        """Assign a doctor to an appointment"""
+        ehr = self.repository.assign_doctor(doctor_id, ehr_id)
         return ehr
 
     def update_diagnosis(self, ehr_id: int, doctor_id: UUID, data):

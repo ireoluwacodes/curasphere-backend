@@ -12,8 +12,21 @@ class EHRRepository:
     def __init__(self, session: Session = Depends(get_session)) -> None:
         self.session = session
 
-    def create(self, appointment_id: UUID, nurse_id: UUID) -> EHR:
+    def assign_doctor(self, doctor_id: UUID, ehr_id: UUID) -> EHR:
         """Create a new EHR record for an appointment"""
+        ehr = self.get_by_id(ehr_id)
+        if not ehr:
+            raise ValueError(f"EHR with ID {ehr_id} not found")
+        ehr.doctor_id = doctor_id
+        self.session.add(ehr)
+        self.session.commit()
+        self.session.refresh(ehr)
+        return ehr
+
+    def update_vitals(
+        self, appointment_id: UUID, data, nurse_id: UUID
+    ) -> Optional[EHR]:
+        """Initialize EHR and Update vital signs"""
         # Get appointment to retrieve patient_id
         statement = select(Appointment).where(
             Appointment.id == appointment_id
@@ -29,30 +42,14 @@ class EHRRepository:
             patient_id=appointment.patient_id,
             nurse_id=nurse_id,
             appointment_id=appointment_id,
-            status="initiated",
+            temperature=data.temperature,
+            blood_pressure=data.blood_pressure,
+            heart_rate=data.heart_rate,
+            status="vitals_recorded",
         )
 
-        self.session.add(ehr)
-        self.session.commit()
-        self.session.refresh(ehr)
-        return ehr
-
-    def update_vitals(
-        self, ehr_id: int, data, doctor_id: UUID
-    ) -> Optional[EHR]:
-        """Update vital signs and assign doctor"""
-        ehr = self.get_by_id(ehr_id)
-        if not ehr:
-            return None
-
-        ehr.temperature = data.temperature
-        ehr.blood_pressure = data.blood_pressure
-        ehr.heart_rate = data.heart_rate
-        ehr.respiratory_rate = data.respiratory_rate
-        ehr.oxygen_saturation = data.oxygen_saturation
-        ehr.doctor_id = doctor_id
-        ehr.status = "vitals_recorded"
-
+        appointment.status = "VITALS_RECORDED"
+        self.session.add(appointment)
         self.session.add(ehr)
         self.session.commit()
         self.session.refresh(ehr)
@@ -89,7 +86,7 @@ class EHRRepository:
         self.session.refresh(ehr)
         return ehr
 
-    def get_by_id(self, ehr_id: int) -> Optional[EHR]:
+    def get_by_id(self, ehr_id: UUID) -> Optional[EHR]:
         """Get EHR by ID"""
         statement = select(EHR).where(EHR.id == ehr_id)
         return self.session.exec(statement).one_or_none()

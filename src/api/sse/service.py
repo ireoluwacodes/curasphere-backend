@@ -35,8 +35,8 @@ class SSEService:
 
                     message = await client_queue.get()
                     yield {
-                        "event": message["type"],
-                        "data": json.dumps(message),
+                        "event": "message",
+                        "data": json.dumps(message, default=str),
                     }
 
             except asyncio.CancelledError:

@@ -9,43 +9,43 @@ from src.api.user.models import User, UserRole
 router = APIRouter()
 
 
-@router.post("/initiate/{appointment_id}")
-async def initiate_ehr(
-    appointment_id: UUID,
+@router.put("/assign/{doctor_id}/{ehr_id}")
+async def assign_doctor(
+    doctor_id: UUID,
+    ehr_id: UUID,
     ehr_service: EHRService = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    """Initiate an EHR record for an appointment (nurses only)"""
     if current_user.type != UserRole.nurse:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only nurses can initiate EHR records",
+            detail="Only nurses can assign doctors",
         )
 
-    ehr = ehr_service.initiate_ehr(appointment_id, current_user.id)
+    ehr = ehr_service.assign_doctor(doctor_id, ehr_id)
+    if not ehr:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="EHR record not found",
+        )
     return {"success": True, "ehr": ehr}
 
 
-@router.put("/vitals/{ehr_id}")
+@router.post("/vitals/{appointment_id}")
 async def record_vitals(
-    ehr_id: int,
+    appointment_id: UUID,
     data: VitalSignsInput,
     ehr_service: EHRService = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    """Record vital signs and assign doctor (nurses only)"""
+    """Record vital signs (nurses only)"""
     if current_user.type != UserRole.nurse:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only nurses can record vital signs",
         )
 
-    ehr = ehr_service.record_vitals(ehr_id, data, current_user.id)
-    if not ehr:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="EHR record not found",
-        )
+    ehr = ehr_service.record_vitals(appointment_id, data, current_user.nurse.id)
     return {"success": True, "ehr": ehr}
 
 

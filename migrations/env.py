@@ -12,6 +12,9 @@ from src.core.config import settings
 from src.api.user.models import *  # noqa
 from src.api.appointment.model import *  # noqa
 from src.api.ehr.model import *  # noqa
+from src.api.base_model import *  # noqa
+from src.api.uni_enum import *  # noqa
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -56,6 +59,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():

@@ -13,7 +13,9 @@ async def book_appointment(
     appointment_service: AppointmentService = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    appointment = appointment_service.book_appointment(current_user.id, data)
+    appointment = appointment_service.book_appointment(
+        current_user.patient.id, data
+    )
     return {"success": True, "appointment": appointment}
 
 
@@ -24,7 +26,9 @@ async def emergency_request(
     current_user: User = Depends(get_current_user),
 ):
     """Submit an emergency appointment request"""
-    appointment = appointment_service.emergency_request(current_user.id, data)
+    appointment = appointment_service.emergency_request(
+        current_user.patient.id, data
+    )
     return {"success": True, "appointment": appointment}
 
 
@@ -34,7 +38,16 @@ async def list_appointments(
     current_user: User = Depends(get_current_user),
 ):
     """List all appointments for the current user"""
-    appointments = appointment_service.list(current_user)
+    appointments = appointment_service.list(current_user.patient.id)
+    return {"appointments": appointments}
+
+
+@router.get("/nurse/all")
+async def list_all_appointments(
+    appointment_service: AppointmentService = Depends(),
+    current_user: User = Depends(get_current_user),
+):
+    appointments = appointment_service.nurse_list_all()
     return {"appointments": appointments}
 
 
