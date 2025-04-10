@@ -19,24 +19,20 @@ class EHRService:
     def record_vitals(self, appointment_id: UUID, data, nurse_id: UUID):
         """Record vital signs"""
         ehr = self.repository.update_vitals(appointment_id, data, nurse_id)
+        return ehr
 
+    def assign_doctor(self, doctor_id: UUID, appointment_id: UUID):
+        """Assign a doctor to an appointment"""
+        ehr = self.repository.assign_doctor(doctor_id, appointment_id)
         if ehr:
             # Notify the assigned doctor
             self.sse_service.send_notification(
                 {
                     "type": "patient_vitals_recorded",
-                    "ehr_id": ehr.id,
-                    "appointment_id": str(ehr.appointment_id),
+                    "recipient_id": str(ehr.doctor_id),
                     "patient_id": str(ehr.patient_id),
                 },
-                recipient_id=str(ehr.doctor_id),
             )
-
-        return ehr
-
-    def assign_doctor(self, doctor_id: UUID, ehr_id: UUID):
-        """Assign a doctor to an appointment"""
-        ehr = self.repository.assign_doctor(doctor_id, ehr_id)
         return ehr
 
     def update_diagnosis(self, ehr_id: int, doctor_id: UUID, data):

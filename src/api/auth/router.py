@@ -54,6 +54,7 @@ def login(
 
     # Create the appropriate entity response based on user's role
     if user.role == UserRole.doctor and user.doctor:
+        auth_service.set_doctor_as_active(user.id)
         user_response.doctor = DoctorResponse(
             id=user.doctor.id, full_name=user.doctor.full_name
         )

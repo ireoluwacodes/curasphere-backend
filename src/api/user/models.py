@@ -51,6 +51,7 @@ class Doctor(ModelBase, SQLModel, table=True):
     )
     user_id: uuid.UUID = Field(foreign_key="users.id", unique=True)
     full_name: str = Field(nullable=False)
+    status: str = Field(default="inactive", nullable=False)
     user: "User" = Relationship(back_populates="doctor")
     ehr: List["EHR"] = Relationship(back_populates="doctor")
     appointments: List["Appointment"] = Relationship(back_populates="doctor")

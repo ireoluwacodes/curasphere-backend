@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
@@ -34,3 +34,39 @@ class EHROutput(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Nested patient schema
+class EntityResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    full_name: str
+
+    class Config:
+        from_attributes = True
+
+
+# Appointment schema
+class AppointmentResponse(BaseModel):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    patient_id: UUID
+    doctor_id: UUID
+    scheduled_time: datetime
+    duration_minutes: int
+    status: str
+    urgency_level: str
+    type: str
+    location: Optional[str]
+    description: Optional[str]
+    doctor: Optional[EntityResponse]  # doctor might be optional
+    patient: EntityResponse
+
+    class Config:
+        from_attributes = True
+
+
+# List response
+class AppointmentListResponse(BaseModel):
+    records: List[AppointmentResponse]

@@ -19,6 +19,24 @@ async def read_users(
     return users
 
 
+@router.get("/doctors")
+async def read_doctors(
+    user_service: UserService = Depends(),
+    current_user: User = Depends(get_current_user),
+):
+    doctors = user_service.get_all_doctors()
+    return doctors
+
+
+@router.get("/active-doctors")
+async def read_active_doctors(
+    user_service: UserService = Depends(),
+    current_user: User = Depends(get_current_user),
+):
+    doctors = user_service.get_active_doctors()
+    return doctors
+
+
 @router.get("/{user_id}")
 async def read_user(
     user_id: int,

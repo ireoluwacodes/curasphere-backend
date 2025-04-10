@@ -145,6 +145,15 @@ class AuthService:
 
         return user, token
 
+    def set_doctor_as_active(self, user_id: str) -> None:
+        statement = select(Doctor).where(Doctor.user_id == user_id)
+        doctor = self.session.exec(statement).one_or_none()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+        doctor.status = "active"
+        self.session.add(doctor)
+        self.session.commit()
+
     def forgot_password(self, email: str) -> str:
         statement = select(User).where(User.email == email)
         user = self.session.exec(statement).one_or_none()

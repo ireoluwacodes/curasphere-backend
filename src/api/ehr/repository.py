@@ -1,5 +1,7 @@
 from fastapi import Depends
 from sqlmodel import Session, select
+
+from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from uuid import UUID
 
@@ -12,13 +14,22 @@ class EHRRepository:
     def __init__(self, session: Session = Depends(get_session)) -> None:
         self.session = session
 
-    def assign_doctor(self, doctor_id: UUID, ehr_id: UUID) -> EHR:
+    def assign_doctor(self, doctor_id: UUID, appointment_id: UUID) -> EHR:
         """Create a new EHR record for an appointment"""
-        ehr = self.get_by_id(ehr_id)
-        if not ehr:
-            raise ValueError(f"EHR with ID {ehr_id} not found")
+
+        statement = select(EHR).where(EHR.appointment_id == appointment_id)
+        ehr = self.session.exec(statement).one_or_none()
+        statement = select(Appointment).where(
+            Appointment.id == appointment_id
+        )
+        appointment = self.session.exec(statement).one_or_none()
+
+        if not ehr or not appointment:
+            raise ValueError("EHR or Appointment not found")
         ehr.doctor_id = doctor_id
+        appointment.doctor_id = doctor_id
         self.session.add(ehr)
+        self.session.add(appointment)
         self.session.commit()
         self.session.refresh(ehr)
         return ehr
@@ -106,9 +117,15 @@ class EHRRepository:
         statement = select(EHR).where(EHR.doctor_id == doctor_id)
         return self.session.exec(statement).all()
 
-    def get_pending_for_doctor(self, doctor_id: UUID) -> List[EHR]:
-        """Get pending EHR records for a doctor"""
-        statement = select(EHR).where(
-            (EHR.doctor_id == doctor_id) & (EHR.status == "vitals_recorded")
+    def get_pending_for_doctor(self, doctor_id: UUID) -> List[Appointment]:
+        """Get pending records for a doctor"""
+        statement = (
+            select(Appointment)
+            .where(
+                (Appointment.doctor_id == doctor_id)
+                & (Appointment.status == "VITALS_RECORDED")
+            )
+            .order_by(Appointment.scheduled_time)
+            .options(selectinload(Appointment.patient))
         )
         return self.session.exec(statement).all()
