@@ -3,6 +3,12 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
+from src.api.auth.schemas import (
+    DoctorResponse,
+    NurseResponse,
+    PatientResponse,
+)
+
 
 class VitalSignsInput(BaseModel):
     temperature: float
@@ -12,8 +18,7 @@ class VitalSignsInput(BaseModel):
 
 class DiagnosisInput(BaseModel):
     diagnosis: str
-    prescription: Optional[str] = None
-    further_tests: Optional[str] = None
+    prescription: str
 
 
 class EHROutput(BaseModel):
@@ -29,8 +34,6 @@ class EHROutput(BaseModel):
     prescription: Optional[str]
     further_tests: Optional[str]
     status: str
-    created_at: datetime
-    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -52,7 +55,7 @@ class AppointmentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     patient_id: UUID
-    doctor_id: UUID
+    doctor_id: Optional[UUID]
     scheduled_time: datetime
     duration_minutes: int
     status: str
@@ -61,7 +64,8 @@ class AppointmentResponse(BaseModel):
     location: Optional[str]
     description: Optional[str]
     doctor: Optional[EntityResponse]  # doctor might be optional
-    patient: EntityResponse
+    patient: Optional[EntityResponse]
+    ehr: Optional[EHROutput]
 
     class Config:
         from_attributes = True
@@ -70,3 +74,31 @@ class AppointmentResponse(BaseModel):
 # List response
 class AppointmentListResponse(BaseModel):
     records: List[AppointmentResponse]
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    username: str
+    email: str
+    role: str
+    doctor: Optional[DoctorResponse]
+    nurse: Optional[NurseResponse]
+    patient: Optional[PatientResponse]
+
+
+class PatientResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    full_name: str
+    age: int
+    hospital_card_id: str
+    gender: str
+    current_weight_kg: float
+    current_height_cm: float
+    user: UserResponse
+    appointments: List[AppointmentResponse]
+    ehr: List[EHROutput]
+
+
+class PatientRecordResponse(BaseModel):
+    record: PatientResponse

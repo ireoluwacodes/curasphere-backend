@@ -4,6 +4,7 @@ from uuid import UUID
 from src.api.ehr.service import EHRService
 from src.api.ehr.schema import (
     AppointmentListResponse,
+    PatientRecordResponse,
     VitalSignsInput,
     DiagnosisInput,
 )
@@ -53,9 +54,9 @@ async def record_vitals(
     return {"message": "vitals recorded successfully"}
 
 
-@router.put("/diagnosis/{ehr_id}")
+@router.put("/diagnosis/{appointment_id}")
 async def update_diagnosis(
-    ehr_id: int,
+    appointment_id: UUID,
     data: DiagnosisInput,
     ehr_service: EHRService = Depends(),
     current_user: User = Depends(get_current_user),
@@ -67,18 +68,20 @@ async def update_diagnosis(
             detail="Only doctors can update diagnosis",
         )
 
-    ehr = ehr_service.update_diagnosis(ehr_id, current_user.id, data)
+    ehr = ehr_service.update_diagnosis(
+        appointment_id, current_user.doctor.id, data
+    )
     if not ehr:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="EHR record not found or you're not the assigned doctor",
         )
-    return {"success": True, "ehr": ehr}
+    return {"message": "Diagnosis updated successfully"}
 
 
-@router.put("/complete/{ehr_id}")
+@router.put("/complete/{appointment_id}")
 async def complete_ehr(
-    ehr_id: int,
+    appointment_id: UUID,
     ehr_service: EHRService = Depends(),
     current_user: User = Depends(get_current_user),
 ):
@@ -89,24 +92,24 @@ async def complete_ehr(
             detail="Only doctors can complete EHR records",
         )
 
-    ehr = ehr_service.complete_ehr(ehr_id, current_user.doctor.id)
+    ehr = ehr_service.complete_ehr(appointment_id, current_user.doctor.id)
     if not ehr:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="EHR record not found or you're not the assigned doctor",
         )
-    return {"success": True, "ehr": ehr}
+    return {"message": "Appointment completed successfully"}
 
 
-@router.get("/patient/{patient_id}")
+@router.get("/patient/{appointment_id}", response_model=PatientRecordResponse)
 async def get_patient_records(
-    patient_id: UUID,
+    appointment_id: UUID,
     ehr_service: EHRService = Depends(),
     current_user: User = Depends(get_current_user),
 ):
-    """Get all EHR records for a patient"""
-    records = ehr_service.get_patient_records(patient_id)
-    return {"records": records}
+    """Get all patient information by appointment ID"""
+    record = ehr_service.get_patient_records(appointment_id)
+    return {"record": record}
 
 
 @router.get(

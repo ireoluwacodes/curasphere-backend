@@ -2,7 +2,6 @@ from fastapi import Depends
 from uuid import UUID
 
 from src.api.ehr.repository import EHRRepository
-from src.api.appointment.repository import AppointmentRepository
 from src.api.sse.service import SSEService
 
 
@@ -10,10 +9,8 @@ class EHRService:
     def __init__(
         self,
         repository: EHRRepository = Depends(),
-        appointment_repository: AppointmentRepository = Depends(),
     ) -> None:
         self.repository = repository
-        self.appointment_repository = appointment_repository
         self.sse_service = SSEService()
 
     def record_vitals(self, appointment_id: UUID, data, nurse_id: UUID):
@@ -35,39 +32,19 @@ class EHRService:
             )
         return ehr
 
-    def update_diagnosis(self, ehr_id: int, doctor_id: UUID, data):
+    def update_diagnosis(self, appointment_id: UUID, doctor_id: UUID, data):
         """Update diagnosis and prescription"""
-        ehr = self.repository.update_diagnosis(ehr_id, doctor_id, data)
+        return self.repository.update_diagnosis(
+            appointment_id, doctor_id, data
+        )
 
-        if ehr:
-            # Update appointment status
-            appointment = self.appointment_repository.get(
-                None, ehr.appointment_id
-            )
-            if appointment:
-                appointment.status = "completed"
-                self.appointment_repository.session.add(appointment)
-                self.appointment_repository.session.commit()
-
-            # Notify the patient
-            self.sse_service.send_notification(
-                {
-                    "type": "diagnosis_updated",
-                    "ehr_id": ehr.id,
-                    "appointment_id": str(ehr.appointment_id),
-                },
-                recipient_id=str(ehr.patient_id),
-            )
-
-        return ehr
-
-    def complete_ehr(self, ehr_id: int, doctor_id: UUID):
+    def complete_ehr(self, appointment_id: UUID, doctor_id: UUID):
         """Mark EHR as completed"""
-        return self.repository.complete_ehr(ehr_id, doctor_id)
+        return self.repository.complete_ehr(appointment_id, doctor_id)
 
-    def get_patient_records(self, patient_id: UUID):
+    def get_patient_records(self, appointment_id: UUID):
         """Get all EHR records for a patient"""
-        return self.repository.get_patient_records(patient_id)
+        return self.repository.get_patient_records(appointment_id)
 
     def get_doctor_records(self, doctor_id: UUID):
         """Get all EHR records assigned to a doctor"""

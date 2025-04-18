@@ -7,6 +7,7 @@ from uuid import UUID
 
 from src.api.ehr.model import EHR
 from src.api.appointment.model import Appointment
+from src.api.user.models import Patient
 from src.core.database import get_session
 
 
@@ -67,37 +68,53 @@ class EHRRepository:
         return ehr
 
     def update_diagnosis(
-        self, ehr_id: int, doctor_id: UUID, data
+        self, appointment_id: UUID, doctor_id: UUID, data
     ) -> Optional[EHR]:
         """Update diagnosis and prescription by doctor"""
-        ehr = self.get_by_id(ehr_id)
+        statement = select(EHR).where(EHR.appointment_id == appointment_id)
+        ehr = self.session.exec(statement).one_or_none()
         if not ehr or ehr.doctor_id != doctor_id:
             return None
 
         ehr.diagnosis = data.diagnosis
         ehr.prescription = data.prescription
-        ehr.further_tests = data.further_tests
         ehr.status = "diagnosed"
 
+        statement = select(Appointment).where(
+            Appointment.id == appointment_id
+        )
+        appointment = self.session.exec(statement).one_or_none()
+        appointment.status = "DIAGNOSED"
+
         self.session.add(ehr)
+        self.session.add(appointment)
         self.session.commit()
         self.session.refresh(ehr)
         return ehr
 
-    def complete_ehr(self, ehr_id: int, doctor_id: UUID) -> Optional[EHR]:
+    def complete_ehr(
+        self, appointment_id: UUID, doctor_id: UUID
+    ) -> Optional[EHR]:
         """Mark EHR as completed"""
-        ehr = self.get_by_id(ehr_id)
+        statement = select(EHR).where(EHR.appointment_id == appointment_id)
+        ehr = self.session.exec(statement).one_or_none()
         if not ehr or ehr.doctor_id != doctor_id:
             return None
 
         ehr.status = "completed"
+        statement = select(Appointment).where(
+            Appointment.id == appointment_id
+        )
+        appointment = self.session.exec(statement).one_or_none()
+        appointment.status = "COMPLETED"
 
         self.session.add(ehr)
+        self.session.add(appointment)
         self.session.commit()
         self.session.refresh(ehr)
         return ehr
 
-    def get_by_id(self, ehr_id: UUID) -> Optional[EHR]:
+    def get_by_id(self, ehr_id: int) -> Optional[EHR]:
         """Get EHR by ID"""
         statement = select(EHR).where(EHR.id == ehr_id)
         return self.session.exec(statement).one_or_none()
@@ -107,10 +124,22 @@ class EHRRepository:
         statement = select(EHR).where(EHR.appointment_id == appointment_id)
         return self.session.exec(statement).one_or_none()
 
-    def get_patient_records(self, patient_id: UUID) -> List[EHR]:
-        """Get all EHR records for a patient"""
-        statement = select(EHR).where(EHR.patient_id == patient_id)
-        return self.session.exec(statement).all()
+    def get_patient_records(self, appointment_id: UUID) -> Patient:
+        """Get all records for a patient"""
+        statement = select(Appointment).where(
+            Appointment.id == appointment_id
+        )
+        appointment = self.session.exec(statement).one_or_none()
+        statement = (
+            select(Patient)
+            .where(Patient.id == appointment.patient_id)
+            .options(
+                selectinload(Patient.user),
+                selectinload(Patient.appointments),
+                selectinload(Patient.ehr),
+            )
+        )
+        return self.session.exec(statement).one_or_none()
 
     def get_doctor_records(self, doctor_id: UUID) -> List[EHR]:
         """Get all EHR records assigned to a doctor"""
@@ -123,9 +152,13 @@ class EHRRepository:
             select(Appointment)
             .where(
                 (Appointment.doctor_id == doctor_id)
-                & (Appointment.status == "VITALS_RECORDED")
+                & (Appointment.status != "CANCELED")
+                & (Appointment.status != "PENDING")
             )
             .order_by(Appointment.scheduled_time)
-            .options(selectinload(Appointment.patient))
+            .options(
+                selectinload(Appointment.patient),
+                selectinload(Appointment.ehr),
+            )
         )
         return self.session.exec(statement).all()

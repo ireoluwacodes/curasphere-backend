@@ -25,7 +25,7 @@ class AppointmentType(BaseEnum):
 
 class AppointmentStatus(BaseEnum):
     PENDING = "PENDING"
-    IN_PROGRESS = "IN_PROGRESS"
+    DIAGNOSED = "DIAGNOSED"
     VITALS_RECORDED = "VITALS_RECORDED"
     COMPLETED = "COMPLETED"
     CANCELED = "CANCELED"
